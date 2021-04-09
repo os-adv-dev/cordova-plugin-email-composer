@@ -39,6 +39,8 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
+import static android.app.Activity.RESULT_OK;
+
 @SuppressWarnings("Convert2Diamond")
 public class EmailComposer extends CordovaPlugin {
 
@@ -61,6 +63,12 @@ public class EmailComposer extends CordovaPlugin {
     // The callback context used when calling back into JavaScript
     private CallbackContext command;
 
+    //holds the cordova plugin context
+    private CordovaPlugin myPlugin; 
+
+    //holds the temporarily an Id
+    private String tempId;
+
     /**
      * Delete externalCacheDirectory on appstart
      *
@@ -71,6 +79,7 @@ public class EmailComposer extends CordovaPlugin {
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
         impl.cleanupAttachmentFolder(getContext());
+        myPlugin = this;
     }
 
     /**
@@ -129,18 +138,36 @@ public class EmailComposer extends CordovaPlugin {
     private void isAvailable (final String id) {
         cordova.getThreadPool().execute(new Runnable() {
             public void run() {
-                boolean[] available = impl.canSendMail(id, getContext());
-                List<PluginResult> messages = new ArrayList<PluginResult>();
+                tempId = id;
+                Intent intent;
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                    intent = AccountManager.newChooseAccountIntent(null, null,null, null, null, null, null);
+                } else {
+                    intent = AccountManager.newChooseAccountIntent(null, null,null, false, null, null, null, null);
+                }
 
-                messages.add(new PluginResult(PluginResult.Status.OK, available[0]));
-                messages.add(new PluginResult(PluginResult.Status.OK, available[1]));
-
-                PluginResult result = new PluginResult(
-                        PluginResult.Status.OK, messages);
-
-                command.sendPluginResult(result);
+                cordova.startActivityForResult(myPlugin, intent, 123);
             }
         });
+    }
+
+    protected void OnActivityResult(final int requestCode, final int resultCode,
+                                    final Intent data) {
+        if (requestCode == 123 && resultCode == RESULT_OK) {
+
+            boolean[] available = impl.canSendMail(tempId, getContext());
+            List<PluginResult> messages = new ArrayList<PluginResult>();
+
+            messages.add(new PluginResult(PluginResult.Status.OK, available[0]));
+            messages.add(new PluginResult(PluginResult.Status.OK, available[1]));
+
+            PluginResult result = new PluginResult(
+                    PluginResult.Status.OK, messages);
+
+            tempId = "";
+            command.sendPluginResult(result);
+        }
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
     /**
