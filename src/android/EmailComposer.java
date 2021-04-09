@@ -64,11 +64,9 @@ public class EmailComposer extends CordovaPlugin {
     // The callback context used when calling back into JavaScript
     private CallbackContext command;
 
-    //holds the cordova plugin context
-    private CordovaPlugin myPlugin; 
+    private CordovaPlugin myPlugin;
 
-    //holds the temporarily an Id
-    private String tempId;
+    private String dummy;
 
     /**
      * Delete externalCacheDirectory on appstart
@@ -139,7 +137,7 @@ public class EmailComposer extends CordovaPlugin {
     private void isAvailable (final String id) {
         cordova.getThreadPool().execute(new Runnable() {
             public void run() {
-                tempId = id;
+                dummy = id;
                 Intent intent;
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                     intent = AccountManager.newChooseAccountIntent(null, null,null, null, null, null, null);
@@ -152,11 +150,11 @@ public class EmailComposer extends CordovaPlugin {
         });
     }
 
+
     protected void OnActivityResult(final int requestCode, final int resultCode,
                                     final Intent data) {
         if (requestCode == 123 && resultCode == RESULT_OK) {
-
-            boolean[] available = impl.canSendMail(tempId, getContext());
+            boolean[] available = impl.canSendMail(dummy, getContext());
             List<PluginResult> messages = new ArrayList<PluginResult>();
 
             messages.add(new PluginResult(PluginResult.Status.OK, available[0]));
@@ -165,7 +163,7 @@ public class EmailComposer extends CordovaPlugin {
             PluginResult result = new PluginResult(
                     PluginResult.Status.OK, messages);
 
-            tempId = "";
+            dummy = "";
             command.sendPluginResult(result);
         }
         super.onActivityResult(requestCode, resultCode, data);
