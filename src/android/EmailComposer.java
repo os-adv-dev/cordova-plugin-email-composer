@@ -22,6 +22,7 @@
 package de.appplant.cordova.emailcomposer;
 
 import android.Manifest;
+import android.accounts.AccountManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
